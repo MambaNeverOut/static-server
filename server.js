@@ -8,7 +8,7 @@ if (!port) {
   process.exit(1);
 }
 
-var server = http.createServer(function (request, response) {
+var server = http.createServer(function(request, response) {
   var parsedUrl = url.parse(request.url, true);
   var pathWithQuery = request.url;
   var queryString = "";
@@ -20,7 +20,7 @@ var server = http.createServer(function (request, response) {
   var method = request.method;
 
   /******** 从这里开始看，上面不要看 ************/
-  const session = JSON.parse(fs.readFileSync('./session.json').toString())
+  const session = JSON.parse(fs.readFileSync("./session.json").toString());
 
   console.log("有个傻子发请求过来啦！路径（带查询参数）为：" + pathWithQuery);
 
@@ -32,7 +32,7 @@ var server = http.createServer(function (request, response) {
       array.push(chunk);
     });
     request.on("end", () => {
-      const string = Buffer.concat(array).toString();
+      const string = Buffer.concat(array).toString(); // utf-8编码
       const obj = JSON.parse(string);
       const user = userArray.find(
         user => user.name === obj.name && user.password === obj.password
@@ -43,20 +43,21 @@ var server = http.createServer(function (request, response) {
         response.end(`{"errorCode":4001}`);
       } else {
         response.statusCode = 200;
-        const random = Math.random()
+        const random = Math.random();
         session[random] = {
           user_id: user.id
-        }
-        fs.writeFileSync('./session.json', JSON.stringify(session))
+        };
+        fs.writeFileSync("./session.json", JSON.stringify(session));
+        // 添加HttpOnly，防止前端操作cookie
         response.setHeader("Set-Cookie", `session_id=${random}; HttpOnly`);
-        response.end()
+        response.end();
       }
     });
   } else if (path === "/home.html") {
     // 主页
     const cookie = request.headers["cookie"];
     console.log(cookie);
-    let sessionId
+    let sessionId;
     try {
       sessionId = cookie
         .split(";")
@@ -64,11 +65,11 @@ var server = http.createServer(function (request, response) {
         .split("=")[1];
     } catch (error) {}
     if (sessionId && session[sessionId]) {
-      const userId = session[sessionId].user_id
+      const userId = session[sessionId].user_id;
       const userArray = JSON.parse(fs.readFileSync("./db/users.json"));
       const user = userArray.find(user => user.id === userId);
       const homeHtml = fs.readFileSync("./public/home.html").toString();
-      let string = ''
+      let string = "";
       if (user) {
         string = homeHtml
           .replace("{{loginStatus}}", "已登录")
@@ -86,8 +87,7 @@ var server = http.createServer(function (request, response) {
         .replace("{{user.name}}", "");
       response.write(string);
     }
-    response.end()
-
+    response.end();
   } else if (path === "/register" && method === "POST") {
     response.setHeader("Content-Type", "text/html; charset=utf-8");
     const userArray = JSON.parse(fs.readFileSync("./db/users.json"));
@@ -143,7 +143,7 @@ var server = http.createServer(function (request, response) {
 server.listen(port);
 console.log(
   "监听 " +
-  port +
-  " 成功\n请用在空中转体720度然后用电饭煲打开 http://localhost:" +
-  port
+    port +
+    " 成功\n请用在空中转体720度然后用电饭煲打开 http://localhost:" +
+    port
 );
